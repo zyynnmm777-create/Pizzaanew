@@ -83,11 +83,12 @@ function sendCustomerMessage(event) {
   .catch(err => console.error("خطأ في إرسال الرسالة:", err));
 }
 
-// جلب رسائل الزبون الحالي وعرضها داخل النافذة المنبثقة
+// جلب رسائل الزبون الحالي وعرضها داخل النافذة المنبثقة دون مسح ما يكتبه
 function loadCustomerChatMessages() {
   if (!user || !user.phone) return;
   
-  let cleanPhone = String(user.phone).trim().replace(/\D/g, '').slice(-9);
+  // تنظيف رقم المستخدم الحالي واستخراج الأرقام فقط
+  let cleanPhone = String(user.phone).trim().replace(/\D/g, '');
 
   fetch(`/.netlify/functions/support-messages?phone=${encodeURIComponent(user.phone)}`)
   .then(res => res.json())
@@ -95,7 +96,6 @@ function loadCustomerChatMessages() {
     let container = document.getElementById('customerChatMessagesList');
     if (!container) return;
     
-    // استخراج الرسائل بمرونة سواء كانت مصفوفة مباشرة أو داخل object
     let messages = [];
     if (Array.isArray(data)) {
       messages = data;
@@ -103,10 +103,12 @@ function loadCustomerChatMessages() {
       messages = data.messages;
     }
 
-    // تصفية الرسائل الخاصة بهذا العميل فقط تطابقاً تاماً
+    // تصفية الرسائل بمقارنة مرنة تحتمل اختلاف بادئات الأرقام أو الرموز
     messages = messages.filter(m => {
-      let mPhone = String(m.customerPhone || '').trim().replace(/\D/g, '').slice(-9);
-      return mPhone === cleanPhone;
+      let mPhone = String(m.customerPhone || '').trim().replace(/\D/g, '');
+      if (!mPhone || !cleanPhone) return false;
+      // مطابقة إذا كان أحد الرقمين يحتوي على الآخر أو يتطابقان كلياً
+      return mPhone.endsWith(cleanPhone) || cleanPhone.endsWith(mPhone) || mPhone === cleanPhone;
     });
 
     if (messages.length === 0) {
@@ -114,20 +116,33 @@ function loadCustomerChatMessages() {
       return;
     }
 
-    container.innerHTML = messages.map(m => {
+    // حفظ النص المكتوب حالياً إن وجد قبل تحديث المحادثة
+    let inputField = document.getElementById('supportMessageInput');
+    let currentTypedText = inputField ? inputField.value : '';
+
+    let html = messages.map(m => {
       let isCustomer = m.sender === 'customer';
       let bg = isCustomer ? '#800000' : '#222';
       let align = isCustomer ? 'text-align:right;' : 'text-align:left;';
       return `
         <div style="margin-bottom:10px; ${align}">
-          <div style="display:inline-block; background:${bg}; padding:8px 12px; border-radius:10px; max-width:80%; font-size:13px; word-break:break-word;">
+          <div style="display:inline-block; background:${bg}; padding:8px 12px; border-radius:10px; max-width:80%; font-size:13px; word-break:break-word; color:#fff;">
             ${m.message}
           </div>
           <div style="font-size:10px; color:#aaa; margin-top:2px;">${m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</div>
         </div>
       `;
     }).join('');
-    container.scrollTop = container.scrollHeight;
+
+    if (container.innerHTML !== html) {
+      container.innerHTML = html;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // إعادة النص المكتوب إلى حقل الإدخال لضمان عدم ضياعه
+    if (inputField && inputField.value !== currentTypedText) {
+      inputField.value = currentTypedText;
+    }
   })
   .catch(err => console.error("خطأ في جلب المحادثة:", err));
 }
