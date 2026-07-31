@@ -24,22 +24,28 @@ function triggerFlash(containerId) {
   void el.offsetWidth;
   el.classList.add('flash-animate');
 }
+let chatInterval = null;
 
-// فتح نافذة محادثة خدمة العملاء الداخلية
 function openCustomerService() {
   let modal = document.getElementById('supportModal');
   if (modal) {
     modal.style.display = 'flex';
     loadCustomerChatMessages();
+    
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(loadCustomerChatMessages, 3000);
   } else {
     showToast("⚠️ نافذة المحادثة غير متوفرة حالياً");
   }
 }
 
-// إغلاق نافذة خدمة العملاء (تتوافق الآن مع زر X في الـ HTML)
 function closeCustomerServiceModal() {
   let modal = document.getElementById('supportModal');
   if (modal) modal.style.display = 'none';
+  if (chatInterval) {
+    clearInterval(chatInterval);
+    chatInterval = null;
+  }
 }
 
 // إرسال رسالة من الزبون إلى الإدارة (تتوافق مع زر الإرسال وحقل الإدخال)
