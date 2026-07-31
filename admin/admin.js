@@ -124,8 +124,7 @@ function updateOrderStatus(orderId, newStatus) {
   .catch(err => { console.error(err); alert("❌ حدث خطأ أثناء التحديث."); });
 }
 
-// 2. خدمة العملاء (مكان مخصص لربط الرسائل لاحقاً)
-// 2. خدمة العملاء (ربط الرسائل واستعراضها والرد عليها)
+// 2. خدمة العملاء (ربط الرسائل واستعراضها والرد عليها مع تحديث العداد الأحمر للإدارة)
 function fetchCustomerSupportMessages() {
   let container = document.getElementById("adminSupportList");
   if(!container) return;
@@ -135,12 +134,9 @@ function fetchCustomerSupportMessages() {
   .then(res => res.json())
   .then(data => {
     let messages = Array.isArray(data) ? data : (data.messages || []);
-    if (messages.length === 0) {
-      container.innerHTML = `<div class="card-box" style="text-align:center; color:#aaa;">لا توجد رسائل دعم فني واردة حالياً من الزبائن.</div>`;
-      return;
-    }
-
-    // تجميع الرسائل حسب رقم هاتف العميل
+    
+    // حساب عدد الرسائل غير المقروءة للوحة الإدارة
+    let unreadCount = 0;
     let grouped = {};
     messages.forEach(m => {
       let phone = m.customerPhone || 'unknown';
@@ -148,9 +144,31 @@ function fetchCustomerSupportMessages() {
       grouped[phone].messages.push(m);
     });
 
+    Object.keys(grouped).forEach(phone => {
+      let clientMsgs = grouped[phone].messages;
+      let lastMsg = clientMsgs[clientMsgs.length - 1];
+      if (lastMsg && lastMsg.sender === 'customer') {
+        unreadCount++;
+      }
+    });
+
+    let adminBadge = document.getElementById('adminSupportBadge');
+    if (adminBadge) {
+      if (unreadCount > 0) {
+        adminBadge.style.display = 'inline-block';
+        adminBadge.innerText = unreadCount;
+      } else {
+        adminBadge.style.display = 'none';
+      }
+    }
+
+    if (messages.length === 0) {
+      container.innerHTML = `<div class="card-box" style="text-align:center; color:#aaa;">لا توجد رسائل دعم فني واردة حالياً من الزبائن.</div>`;
+      return;
+    }
+
     container.innerHTML = Object.keys(grouped).map(phone => {
       let client = grouped[phone];
-      let lastMsg = client.messages[client.messages.length - 1];
       return `
         <div class="card-box" style="border-left: 4px solid #ff4d4d;">
           <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
@@ -205,12 +223,10 @@ function sendAdminReply(customerPhone, customerName) {
   .catch(err => alert("❌ فشل إرسال الرد"));
 }
 
-
 // 3. تقييمات التوصيل
 function fetchDeliveryReviews() {
   let container = document.getElementById("adminReviewsList");
   if(!container) return;
-  // يمكن ربطها بنظام التقييمات لاحقاً
   container.innerHTML = `<div class="card-box" style="text-align:center; color:#aaa;">لا توجد تقييمات توصيل مسجلة حتى الآن.</div>`;
 }
 
@@ -231,7 +247,9 @@ function saveAnnouncement() {
 window.onload = function() {
   if (checkAuth()) {
     fetchOrders();
-    // استرجاع حالة الإعدادات المخزنة
+    // جلب دوري لرسائل الدعم لتحديث الشارة الحمراء للإدارة تلقائياً كل 5 ثوانٍ
+    setInterval(fetchCustomerSupportMessages, 5000);
+
     let isClosed = localStorage.getItem("restaurantClosed") === "true";
     let toggleEl = document.getElementById("restaurantStatusToggle");
     if(toggleEl) toggleEl.checked = isClosed;
@@ -241,4 +259,3 @@ window.onload = function() {
     if(annEl && savedMsg) annEl.value = savedMsg;
   }
 };
-
