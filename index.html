@@ -256,14 +256,19 @@
       <div class="support-modal-content">
           <div class="support-header">
               <h3>محادثة الدعم الفني</h3>
-              <button onclick="closeCustomerService()" class="close-btn">&times;</button>
+              <!-- تم تصحيح دالة الإغلاق لتطابق اسم الدالة في ملف الـ JS -->
+              <button onclick="closeCustomerServiceModal()" class="close-btn">&times;</button>
           </div>
           <div id="supportChatMessages" class="support-body">
               <p class="support-welcome">مرحباً بك! اكتب استفسارك أو مشكلتك وسنقوم بالرد عليك قريباً.</p>
+              <!-- حاوية عرض الرسائل المتسلسلة -->
+              <div id="customerChatMessagesList"></div>
           </div>
           <div class="support-footer">
-              <input type="text" id="supportMsgInput" placeholder="اكتب رسالتك هنا...">
-              <button onclick="sendSupportMessageUI()">إرسال</button>
+              <!-- تم تصحيح ID الحقل ليتطابق مع ملف الـ JS -->
+              <input type="text" id="supportMessageInput" placeholder="اكتب رسالتك هنا...">
+              <!-- تم تصحيح دالة الإرسال لتطابق دالة المعالجة في الـ JS -->
+              <button onclick="sendCustomerMessage(event)">إرسال</button>
           </div>
       </div>
   </div>
@@ -291,3 +296,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+
