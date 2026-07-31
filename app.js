@@ -36,12 +36,13 @@ function openCustomerService() {
   }
 }
 
+// إغلاق نافذة خدمة العملاء (تتوافق الآن مع زر X في الـ HTML)
 function closeCustomerServiceModal() {
   let modal = document.getElementById('supportModal');
   if (modal) modal.style.display = 'none';
 }
 
-// إرسال رسالة من الزبون إلى الإدارة
+// إرسال رسالة من الزبون إلى الإدارة (تتوافق مع زر الإرسال وحقل الإدخال)
 function sendCustomerMessage(event) {
   if (event) event.preventDefault();
   
@@ -616,7 +617,6 @@ function getMyLocation() {
   }
 }
 
-// دالة التحقق التلقائي من حالة المطعم (مفتوح / مغلق)
 function checkRestaurantStatus() {
   fetch('/.netlify/functions/get-settings')
   .then(res => res.json())
@@ -755,7 +755,6 @@ function renderOrders() {
   });
 }
 
-// نظام تقييمات التوصيل
 let currentRatingOrderId = null;
 let selectedRatingStars = 0;
 
@@ -970,7 +969,7 @@ window.onload = function() {
   renderHomeProducts();
   renderProfile();
   updateCartCounter();
-  checkRestaurantStatus(); // التحقق من حالة المطعم تلقائياً عند الفتح
+  checkRestaurantStatus();
   
   let splash = document.getElementById('splash');
   if(splash) {
