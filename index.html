@@ -53,7 +53,11 @@
     </div>
     <div class="header-icons">
       <span onclick="showPage('searchPage')" style="cursor:pointer; font-size: 20px;" title="بحث">🔍</span>
-      <span onclick="openCustomerService()" style="cursor:pointer; font-size: 20px;" title="خدمة العملاء">🎧</span>
+      <!-- شارة الرقم الأحمر فوق أيقونة خدمة العملاء -->
+      <span onclick="openCustomerService()" style="cursor:pointer; font-size: 20px; position: relative;" title="خدمة العملاء">
+        🎧
+        <span id="clientSupportBadge" style="position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; padding: 2px 5px; font-size: 9px; font-weight: bold; display: none;">0</span>
+      </span>
     </div>
   </header>
 
@@ -256,18 +260,14 @@
       <div class="support-modal-content">
           <div class="support-header">
               <h3>محادثة الدعم الفني</h3>
-              <!-- تم تصحيح دالة الإغلاق لتطابق اسم الدالة في ملف الـ JS -->
               <button onclick="closeCustomerServiceModal()" class="close-btn">&times;</button>
           </div>
           <div id="supportChatMessages" class="support-body">
               <p class="support-welcome">مرحباً بك! اكتب استفسارك أو مشكلتك وسنقوم بالرد عليك قريباً.</p>
-              <!-- حاوية عرض الرسائل المتسلسلة -->
               <div id="customerChatMessagesList"></div>
           </div>
           <div class="support-footer">
-              <!-- تم تصحيح ID الحقل ليتطابق مع ملف الـ JS -->
               <input type="text" id="supportMessageInput" placeholder="اكتب رسالتك هنا...">
-              <!-- تم تصحيح دالة الإرسال لتطابق دالة المعالجة في الـ JS -->
               <button onclick="sendCustomerMessage(event)">إرسال</button>
           </div>
       </div>
@@ -294,6 +294,34 @@
 
   <script src="data.js"></script>
   <script src="app.js"></script>
+  <!-- سكربت فحص وتحديث شارة إشعارات العملاء -->
+  <script>
+    function checkClientUnreadSupport() {
+      if (typeof user === 'undefined' || !user || !user.phone) return;
+      let cleanPhone = String(user.phone).trim().replace(/\D/g, '').slice(-9);
+
+      fetch(`/.netlify/functions/support-messages?phone=${encodeURIComponent(user.phone)}`)
+      .then(res => res.json())
+      .then(data => {
+        let messages = Array.isArray(data) ? data : (data.messages || []);
+        let clientMsgs = messages.filter(m => {
+          let mPhone = String(m.customerPhone || '').trim().replace(/\D/g, '').slice(-9);
+          return mPhone === cleanPhone;
+        });
+
+        let adminReplies = clientMsgs.filter(m => m.sender === 'admin');
+        let badge = document.getElementById('clientSupportBadge');
+        if (badge) {
+          if (adminReplies.length > 0) {
+            badge.style.display = 'inline-block';
+            badge.innerText = adminReplies.length;
+          } else {
+            badge.style.display = 'none';
+          }
+        }
+      }).catch(err => console.log(err));
+    }
+    setInterval(checkClientUnreadSupport, 5000);
+  </script>
 </body>
 </html>
-
