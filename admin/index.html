@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🍕 لوحة تحكم الإدارة - الفطيرة الساخنة</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Cairo',sans-serif;}
+    body{background-color:#111;color:#fff;padding:15px;padding-bottom:80px;direction:rtl;}
+    header{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg, #1a1a1a, #800000);padding:15px 20px;border-radius:15px;border-bottom:2px solid #ff4d4d;margin-bottom:20px;}
+    h1{font-size:18px;color:#fff;}
+    .btn{padding:8px 14px;border:none;border-radius:10px;font-size:13px;font-weight:bold;cursor:pointer;background:linear-gradient(135deg, #ff4d4d, #800000);color:#fff;}
+    
+    /* أقسام لوحة التحكم */
+    .admin-section{display:none;}
+    .admin-section.active{display:block;}
+    
+    .card-box{background:#1b1b1b;border:1px solid #333;border-radius:14px;padding:15px;margin-bottom:15px;box-shadow:0 4px 15px rgba(0,0,0,0.4);}
+    .loading{text-align:center;padding:30px;color:#888;font-size:15px;}
+
+    /* الشريط السفلي للتنقل بين الأقسام */
+    nav.admin-bottom-nav{position:fixed;bottom:0;right:0;left:0;background:#181818;border-top:1px solid #333;display:flex;justify-content:around;align-items:center;padding:10px 5px;z-index:1000;}
+    .nav-item{flex:1;text-align:center;background:none;border:none;color:#aaa;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:0.2s;}
+    .nav-item.active{color:#ff4d4d;font-weight:bold;}
+    .nav-item span.icon{font-size:18px;}
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🍕 لوحة الإدارة</h1>
+    <button class="btn" onclick="refreshCurrentSection()">🔄 تحديث</button>
+  </header>
+
+  <!-- القسم الأول: الطلبات الرئيسية -->
+  <div id="section-orders" class="admin-section active">
+    <h2 style="font-size:16px; margin-bottom:12px; color:#ff4d4d;">📦 الطلبات الواردة</h2>
+    <div id="adminOrdersList">
+      <div class="loading">جاري تحميل الطلبات...</div>
+    </div>
+  </div>
+
+  <!-- القسم الثاني: خدمة العملاء -->
+  <div id="section-support" class="admin-section">
+    <h2 style="font-size:16px; margin-bottom:12px; color:#ff4d4d;">💬 رسائل خدمة العملاء</h2>
+    <div id="adminSupportList">
+      <div class="loading">لا توجد استفسارات جديدة حالياً</div>
+    </div>
+  </div>
+
+  <!-- القسم الثالث: تقييمات التوصيل -->
+  <div id="section-reviews" class="admin-section">
+    <h2 style="font-size:16px; margin-bottom:12px; color:#ff4d4d;">⭐ تقييمات التوصيل والخدمة</h2>
+    <div id="adminReviewsList">
+      <div class="loading">لا توجد تقييمات مسجلة بعد</div>
+    </div>
+  </div>
+
+  <!-- القسم الرابع: الإعدادات -->
+  <div id="section-settings" class="admin-section">
+    <h2 style="font-size:16px; margin-bottom:12px; color:#ff4d4d;">⚙️ إعدادات المطعم</h2>
+    <div class="card-box" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <strong>حالة المطعم الآن:</strong>
+        <p style="font-size:12px; color:#aaa; margin-top:3px;">عند إغلاق المطعم، لن يتمكن الزبائن من إرسال طلبات جديدة.</p>
+      </div>
+      <label style="position:relative; display:inline-block; width:50px; height:26px;">
+        <input type="checkbox" id="restaurantStatusToggle" onchange="toggleRestaurantStatus(this)" style="opacity:0; width:0; height:0;">
+        <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#333; transition:.3s; border-radius:34px;"></span>
+      </label>
+    </div>
+    <div class="card-box">
+      <strong style="display:block; margin-bottom:8px;">📢 رسالة التنبيه العلوية للزبائن:</strong>
+      <input type="text" id="announcementInput" placeholder="مثال: عروض خاصة بمناسبة نهاية الأسبوع!" style="width:100%; padding:10px; background:#222; border:1px solid #444; color:#fff; border-radius:8px; margin-bottom:10px; font-family:'Cairo',sans-serif;">
+      <button class="btn" onclick="saveAnnouncement()">حفظ رسالة التنبيه</button>
+    </div>
+  </div>
+
+  <!-- الشريط السفلي للتنقل -->
+  <nav class="admin-bottom-nav">
+    <button class="nav-item active" onclick="switchAdminTab('orders', this)">
+      <span class="icon">📦</span>الطلبات
+    </button>
+    <button class="nav-item" onclick="switchAdminTab('support', this)">
+      <span class="icon">💬</span>العملاء
+    </button>
+    <button class="nav-item" onclick="switchAdminTab('reviews', this)">
+      <span class="icon">⭐</span>التقييمات
+    </button>
+    <button class="nav-item" onclick="switchAdminTab('settings', this)">
+      <span class="icon">⚙️</span>الإعدادات
+    </button>
+  </nav>
+
+  <!-- ربط ملف الجافاسكريبت الخارجي للإدارة -->
+  <script src="admin.js"></script>
+</body>
+</html>
+
