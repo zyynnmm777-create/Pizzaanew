@@ -87,13 +87,28 @@ function sendCustomerMessage(event) {
 function loadCustomerChatMessages() {
   if (!user || !user.phone) return;
   
+  let cleanPhone = String(user.phone).trim().replace(/\D/g, '').slice(-9);
+
   fetch(`/.netlify/functions/support-messages?phone=${encodeURIComponent(user.phone)}`)
   .then(res => res.json())
   .then(data => {
     let container = document.getElementById('customerChatMessagesList');
     if (!container) return;
     
-    let messages = Array.isArray(data) ? data : (data.messages || []);
+    // استخراج الرسائل بمرونة سواء كانت مصفوفة مباشرة أو داخل object
+    let messages = [];
+    if (Array.isArray(data)) {
+      messages = data;
+    } else if (data && Array.isArray(data.messages)) {
+      messages = data.messages;
+    }
+
+    // تصفية الرسائل الخاصة بهذا العميل فقط تطابقاً تاماً
+    messages = messages.filter(m => {
+      let mPhone = String(m.customerPhone || '').trim().replace(/\D/g, '').slice(-9);
+      return mPhone === cleanPhone;
+    });
+
     if (messages.length === 0) {
       container.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">ابدأ المحادثة مع خدمة العملاء...</div>';
       return;
@@ -108,7 +123,7 @@ function loadCustomerChatMessages() {
           <div style="display:inline-block; background:${bg}; padding:8px 12px; border-radius:10px; max-width:80%; font-size:13px; word-break:break-word;">
             ${m.message}
           </div>
-          <div style="font-size:10px; color:#aaa; margin-top:2px;">${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+          <div style="font-size:10px; color:#aaa; margin-top:2px;">${m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</div>
         </div>
       `;
     }).join('');
@@ -116,6 +131,37 @@ function loadCustomerChatMessages() {
   })
   .catch(err => console.error("خطأ في جلب المحادثة:", err));
 }
+
+// دالة فحص وتحديث شارة إشعارات الدعم الفني غير المقروءة[span_0](start_span)[span_0](end_span)
+function checkClientUnreadSupport() {
+  if (!user || !user.phone) return;
+  let cleanPhone = String(user.phone).trim().replace(/\D/g, '').slice(-9);
+
+  fetch(`/.netlify/functions/support-messages?phone=${encodeURIComponent(user.phone)}`)
+  .then(res => res.json())
+  .then(data => {
+    let messages = Array.isArray(data) ? data : (data.messages || []);
+    let clientMsgs = messages.filter(m => {
+      let mPhone = String(m.customerPhone || '').trim().replace(/\D/g, '').slice(-9);
+      return mPhone === cleanPhone;
+    });
+
+    // احتساب الرسائل التي أرسلتها الإدارة ولم يقرأها العميل
+    let adminReplies = clientMsgs.filter(m => m.sender === 'admin');
+    let badge = document.getElementById('clientSupportBadge');
+    if (badge) {
+      if (adminReplies.length > 0) {
+        badge.style.display = 'inline-block';
+        badge.innerText = adminReplies.length;
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  }).catch(err => console.log(err));
+}
+
+// تشغيل الفحص كل 5 ثوانٍ تلقائياً[span_1](start_span)[span_1](end_span)
+setInterval(checkClientUnreadSupport, 5000);
 
 function hidePages(){ 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); 
