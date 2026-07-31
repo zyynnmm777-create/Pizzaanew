@@ -23,7 +23,7 @@
     nav.admin-bottom-nav{position:fixed;bottom:0;right:0;left:0;background:#181818;border-top:1px solid #333;display:flex;justify-content:around;align-items:center;padding:10px 5px;z-index:1000;}
     .nav-item{flex:1;text-align:center;background:none;border:none;color:#aaa;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:0.2s;}
     .nav-item.active{color:#ff4d4d;font-weight:bold;}
-    .nav-item span.icon{font-size:18px;}
+    .nav-item span.icon{font-size:18px; position:relative;}
   </style>
 </head>
 <body>
@@ -77,13 +77,16 @@
     </div>
   </div>
 
-  <!-- الشريط السفلي للتنقل -->
+  <!-- الشريط السفلي للتنقل مع دعم شارة التنبيه الحمراء -->
   <nav class="admin-bottom-nav">
     <button class="nav-item active" onclick="switchAdminTab('orders', this)">
       <span class="icon">📦</span>الطلبات
     </button>
     <button class="nav-item" onclick="switchAdminTab('support', this)">
-      <span class="icon">💬</span>العملاء
+      <span class="icon">
+        💬
+        <span id="adminSupportBadge" style="position:absolute; top:-8px; right:-12px; background:red; color:white; border-radius:50%; padding:1px 5px; font-size:10px; display:none;">0</span>
+      </span>العملاء
     </button>
     <button class="nav-item" onclick="switchAdminTab('reviews', this)">
       <span class="icon">⭐</span>التقييمات
@@ -97,4 +100,3 @@
   <script src="admin.js"></script>
 </body>
 </html>
-
