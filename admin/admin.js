@@ -124,18 +124,21 @@ function updateOrderStatus(orderId, newStatus) {
   .catch(err => { console.error(err); alert("❌ حدث خطأ أثناء التحديث."); });
 }
 
-// 2. خدمة العملاء (ربط الرسائل واستعراضها والرد عليها مع تحديث العداد الأحمر للإدارة)
+// 2. خدمة العملاء (مع حماية حقل الإدخال لكي لا يمسح ما تكتبه)
 function fetchCustomerSupportMessages() {
   let container = document.getElementById("adminSupportList");
   if(!container) return;
-  container.innerHTML = `<div class="loading">جاري جلب رسائل العملاء...</div>`;
+  
+  // إذا كانت هذه هي المرة الأولى ولا يوجد محتوى، اعرض التحميل
+  if (!container.hasChildNodes() || container.innerHTML.includes('جاري جلب')) {
+    container.innerHTML = `<div class="loading">جاري جلب رسائل العملاء...</div>`;
+  }
 
   fetch('/.netlify/functions/support-messages')
   .then(res => res.json())
   .then(data => {
     let messages = Array.isArray(data) ? data : (data.messages || []);
     
-    // حساب عدد الرسائل غير المقروءة للوحة الإدارة
     let unreadCount = 0;
     let grouped = {};
     messages.forEach(m => {
@@ -167,6 +170,15 @@ function fetchCustomerSupportMessages() {
       return;
     }
 
+    // حفظ النصوص الحالية التي تكتبها الإدارة حالياً قبل إعادة التحديث لتجنب فقدانها
+    let savedInputs = {};
+    Object.keys(grouped).forEach(phone => {
+      let activeInput = document.getElementById(`replyInput_${phone}`);
+      if (activeInput && activeInput.value) {
+        savedInputs[phone] = activeInput.value;
+      }
+    });
+
     container.innerHTML = Object.keys(grouped).map(phone => {
       let client = grouped[phone];
       return `
@@ -178,7 +190,7 @@ function fetchCustomerSupportMessages() {
           <div style="background:#111; padding:10px; border-radius:8px; max-height:150px; overflow-y:auto; margin-bottom:10px; font-size:13px;">
             ${client.messages.map(m => `
               <div style="margin-bottom:6px; text-align:${m.sender === 'admin' ? 'right' : 'left'};">
-                <span style="background:${m.sender === 'admin' ? '#800000' : '#333'}; padding:5px 10px; border-radius:6px; display:inline-block;">
+                <span style="background:${m.sender === 'admin' ? '#800000' : '#333'}; padding:5px 10px; border-radius:6px; display:inline-block; color:#fff;">
                   ${m.sender === 'admin' ? '👑 الإدارة: ' : '🛒 العميل: '}${m.message}
                 </span>
               </div>
@@ -191,10 +203,18 @@ function fetchCustomerSupportMessages() {
         </div>
       `;
     }).join('');
+
+    // استعادة النصوص التي كانت مكتوبة في حقول الإدخال
+    Object.keys(savedInputs).forEach(phone => {
+      let restoredInput = document.getElementById(`replyInput_${phone}`);
+      if (restoredInput) {
+        restoredInput.value = savedInputs[phone];
+      }
+    });
+
   })
   .catch(err => {
     console.error(err);
-    container.innerHTML = `<div class="loading" style="color:#ff4d4d;">حدث خطأ أثناء جلب الرسائل.</div>`;
   });
 }
 
